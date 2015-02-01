@@ -117,7 +117,7 @@ public class Jokes {
 
 	@Path("/{id}/rate")
 	public Rates rate(@PathParam("id") String id) {
-		return new Rates(id);
+		return new Rates(mongoOperations, id);
 	}
 
 	@GET

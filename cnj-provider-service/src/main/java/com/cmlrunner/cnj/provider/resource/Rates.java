@@ -9,7 +9,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoOperations;
 
 import com.cmlrunner.cnj.model.Rate;
@@ -17,13 +16,12 @@ import com.cmlrunner.cnj.model.Rate;
 @Produces(MediaType.APPLICATION_JSON)
 public class Rates {
 
-	@Autowired
-	private MongoOperations mongoOperations;
-
+	private final MongoOperations mongoOperations;
 	private final String jokeId;
 
-	public Rates(String jokeId) {
+	public Rates(MongoOperations mongoOperations, String jokeId) {
 		this.jokeId = jokeId;
+		this.mongoOperations = mongoOperations;
 	}
 
 	@GET
