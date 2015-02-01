@@ -7,13 +7,14 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown = true, value = "rating")
 @Document(collection = "jokes")
 public class Joke {
 
 	private String id;
 	private String joke;
-	private List<Category> categories = new ArrayList<Category>();
+	private int rating;
+	private List<String> categories = new ArrayList<String>();
 
 	public Joke() {
 	}
@@ -30,8 +31,16 @@ public class Joke {
 	public String getJoke() {
 		return joke;
 	}
+	
+	public void setRating(int rating) {
+		this.rating = rating;
+	}
 
-	public List<Category> getCategories() {
+	public int getRating() {
+		return rating;
+	}
+	
+	public List<String> getCategories() {
 		return categories;
 	}
 

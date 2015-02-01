@@ -115,6 +115,17 @@ public class Jokes {
 		return Response.ok().entity(jokes).build();
 	}
 
+	@Path("/{id}/rate")
+	public Rates rate(@PathParam("id") String id) {
+		return new Rates(id);
+	}
+
+	@GET
+	@Path("/echo")
+	public Response echo() {
+		return Response.ok().entity("echo").build();
+	}
+
 	private List<Joke> replaceName(List<Joke> jokes, Map<String, String> replacments) {
 		List<Joke> changedJokes = new ArrayList<Joke>();
 		for (Joke joke : jokes) {
@@ -129,9 +140,11 @@ public class Jokes {
 		return changedJokes;
 	}
 
-	@GET
-	@Path("/echo")
-	public Response echo() {
-		return Response.ok().entity("echo").build();
-	}
+	// @PUT
+	// @Path("/{id}")
+	// @Consumes({ MediaType.APPLICATION_JSON, "text/json" })
+	// public Response update(@PathParam("id") String id, Joke joke) {
+	// return Response.ok(joke).build();
+	// }
+
 }
