@@ -12,26 +12,22 @@ public class Rate {
 	private String user;
 	private int score;
 
+	public Rate(){}
+	
+	public Rate(String id, String user, int score) {
+		this.id = id;
+		this.user = user;
+		this.score = score;
+	}
+	
 	public String getId() {
 		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
 	}
 
 	public String getUser() {
 		return user;
 	}
 	
-	public void setUser(String user) {
-		this.user = user;
-	}
-
-	public void setScore(int score) {
-		this.score = score;
-	}
-
 	public int getScore() {
 		return score;
 	}

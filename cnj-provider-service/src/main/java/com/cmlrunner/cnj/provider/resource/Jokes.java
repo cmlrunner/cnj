@@ -13,6 +13,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -24,9 +25,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import com.cmlrunner.cnj.model.Joke;
+import com.cmlrunner.cnj.model.Rate;
 
 @Service
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 @Path("/jokes")
 public class Jokes {
 
@@ -36,7 +38,7 @@ public class Jokes {
 	@Autowired
 	private MongoOperations mongoOperations;
 
-	@GET
+	// @GET
 	public Response jokes() {
 		List<Joke> jokes = mongoOperations.findAll(Joke.class);
 		return jokes.isEmpty() ? Response.status(Status.NO_CONTENT).build() : Response.ok().entity(jokes).build();
@@ -46,7 +48,11 @@ public class Jokes {
 	@Path("/{id}")
 	public Response jokes(@PathParam("id") String id) {
 		Joke joke = mongoOperations.findOne(Query.query(Criteria.where("_id").is(id)), Joke.class);
-		return joke == null ? Response.status(Status.NO_CONTENT).build() : Response.ok().entity(joke).build();
+		if (joke != null) {
+			joke.setRating(calculateRating(id));
+			return Response.ok().entity(joke).build();
+		}
+		return Response.status(Status.NO_CONTENT).build();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -112,12 +118,20 @@ public class Jokes {
 		if (!replacments.isEmpty()) {
 			jokes = replaceName(jokes, replacments);
 		}
+
+		for (Joke joke : jokes) {
+			joke.setRating(calculateRating(joke.getId()));
+		}
+
 		return Response.ok().entity(jokes).build();
 	}
 
-	@Path("/{id}/rate")
-	public Rates rate(@PathParam("id") String id) {
-		return new Rates(mongoOperations, id);
+	@Path("/{id}/score")
+	public Scores rate(@PathParam("id") String id) {
+		if (mongoOperations.exists(Query.query(Criteria.where("_id").is(id)), Joke.class)) {
+			return new Scores(mongoOperations, id);
+		}
+		throw new WebApplicationException(Status.NOT_FOUND);
 	}
 
 	@GET
@@ -140,11 +154,16 @@ public class Jokes {
 		return changedJokes;
 	}
 
-	// @PUT
-	// @Path("/{id}")
-	// @Consumes({ MediaType.APPLICATION_JSON, "text/json" })
-	// public Response update(@PathParam("id") String id, Joke joke) {
-	// return Response.ok(joke).build();
-	// }
+	private int calculateRating(String jokeId) {
+		List<Rate> rates = mongoOperations.find(Query.query(Criteria.where("_id").is(jokeId)), Rate.class);
+		if (rates.isEmpty()) {
+			return 0;
+		}
+		int scores = 0;
+		for (Rate rate : rates) {
+			scores += rate.getScore();
+		}
+		return scores / rates.size();
+	}
 
 }

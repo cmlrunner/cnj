@@ -3,11 +3,13 @@ package com.cmlrunner.cnj.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@JsonIgnoreProperties(ignoreUnknown = true, value = "rating")
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Document(collection = "jokes")
 public class Joke {
 

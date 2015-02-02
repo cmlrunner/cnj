@@ -8,47 +8,64 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 
 import com.cmlrunner.cnj.model.Rate;
 
 @Produces(MediaType.APPLICATION_JSON)
-public class Rates {
+public class Scores {
 
 	private final MongoOperations mongoOperations;
 	private final String jokeId;
 
-	public Rates(MongoOperations mongoOperations, String jokeId) {
+	public Scores(MongoOperations mongoOperations, String jokeId) {
 		this.jokeId = jokeId;
 		this.mongoOperations = mongoOperations;
 	}
 
 	@GET
-	public String rate(@Context HttpServletRequest request) {
-		// Joke joke =
-		// mongoOperations.findOne(Query.query(Criteria.where("_id").is(id)),
-		// Joke.class);
-		//
-		// String userId = resolveUserId(request);
-		// Rate rate =
-		// mongoOperations.findOne(Query.query(Criteria.where("joke").is(id).and("user").is(userId)),
-		// Rate.class);
-		// joke.setScore(rate.getScore());
-		//
-		// return joke == null ? Response.status(Status.NO_CONTENT).build() :
-		// Response.ok().entity(joke).build();
-
-		return "rates " + jokeId + " " + resolveUserId(request);
+	public Response score(@Context HttpServletRequest request) {
+		String user = resolveUserId(request);
+		Rate rate = mongoOperations.findOne(Query.query(Criteria.where("_id").is(jokeId).and("user").is(user)), Rate.class);
+		if (rate != null) {
+			return Response.ok().entity(new Score(rate.getScore())).build();
+		} else {
+			return Response.ok().entity(new Score()).build();
+		}
 	}
 
 	@PUT
 	@Consumes({ MediaType.APPLICATION_JSON, "text/json" })
-	public Response updateRate(Rate rate, @Context HttpServletRequest request) {
-		rate.setUser(resolveUserId(request));
-		rate.setId(jokeId);
+	public Response updateScore(Score score, @Context HttpServletRequest request) {
+		int value = score.getValue();
+		if (value < 0 || value > 5) {
+			return Response.status(Status.BAD_REQUEST).build();
+		}
+		String user = resolveUserId(request);
+		Rate rate = new Rate(jokeId, user, value);
 		mongoOperations.save(rate);
-		return Response.ok(rate).build();
+
+		return Response.ok(score).build();
+	}
+
+	public static class Score {
+
+		private int value;
+
+		public Score() {
+		}
+
+		public Score(int value) {
+			this.value = value;
+		}
+
+		public int getValue() {
+			return value;
+		}
 	}
 
 	private String resolveUserId(HttpServletRequest request) {
@@ -74,4 +91,5 @@ public class Rates {
 		}
 		return ip;
 	}
+
 }
