@@ -14,6 +14,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -43,14 +44,19 @@ public class Jokes {
 		List<Joke> jokes = mongoOperations.findAll(Joke.class);
 		return jokes.isEmpty() ? Response.status(Status.NO_CONTENT).build() : Response.ok().entity(jokes).build();
 	}
-
+	
 	@GET
 	@Path("/{id}")
 	public Response jokes(@PathParam("id") String id) {
 		Joke joke = mongoOperations.findOne(Query.query(Criteria.where("_id").is(id)), Joke.class);
 		if (joke != null) {
 			joke.setRating(calculateRating(id));
-			return Response.ok().entity(joke).build();
+			
+			CacheControl cacheControl = new CacheControl();
+			cacheControl.setMustRevalidate(true);
+			cacheControl.setMaxAge(60);
+			
+			return Response.ok().entity(joke).cacheControl(cacheControl).build();
 		}
 		return Response.status(Status.NO_CONTENT).build();
 	}
