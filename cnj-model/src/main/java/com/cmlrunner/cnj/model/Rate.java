@@ -8,20 +8,20 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Document(collection = "rates")
 public class Rate {
 
-	private String id;
+	private String jokeId;
 	private String user;
 	private int score;
 
 	public Rate(){}
 	
-	public Rate(String id, String user, int score) {
-		this.id = id;
+	public Rate(String jokeId, String user, int score) {
+		this.jokeId = jokeId;
 		this.user = user;
 		this.score = score;
 	}
 	
-	public String getId() {
-		return id;
+	public String getJokeId() {
+		return jokeId;
 	}
 
 	public String getUser() {

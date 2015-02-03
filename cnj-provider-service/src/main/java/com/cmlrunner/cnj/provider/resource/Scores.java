@@ -13,6 +13,7 @@ import javax.ws.rs.core.Response.Status;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 
 import com.cmlrunner.cnj.model.Rate;
 
@@ -30,7 +31,7 @@ public class Scores {
 	@GET
 	public Response score(@Context HttpServletRequest request) {
 		String user = resolveUserId(request);
-		Rate rate = mongoOperations.findOne(Query.query(Criteria.where("_id").is(jokeId).and("user").is(user)), Rate.class);
+		Rate rate = mongoOperations.findOne(Query.query(Criteria.where("jokeId").is(jokeId).and("user").is(user)), Rate.class);
 		if (rate != null) {
 			return Response.ok().entity(new Score(rate.getScore())).build();
 		} else {
@@ -46,8 +47,7 @@ public class Scores {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 		String user = resolveUserId(request);
-		Rate rate = new Rate(jokeId, user, value);
-		mongoOperations.save(rate);
+		mongoOperations.upsert(Query.query(Criteria.where("jokeId").is(jokeId).and("user").is(user)), Update.update("score", value), Rate.class);
 
 		return Response.ok(score).build();
 	}

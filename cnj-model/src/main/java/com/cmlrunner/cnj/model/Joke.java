@@ -3,8 +3,6 @@ package com.cmlrunner.cnj.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -33,7 +31,7 @@ public class Joke {
 	public String getJoke() {
 		return joke;
 	}
-	
+
 	public void setRating(int rating) {
 		this.rating = rating;
 	}
@@ -41,7 +39,7 @@ public class Joke {
 	public int getRating() {
 		return rating;
 	}
-	
+
 	public List<String> getCategories() {
 		return categories;
 	}

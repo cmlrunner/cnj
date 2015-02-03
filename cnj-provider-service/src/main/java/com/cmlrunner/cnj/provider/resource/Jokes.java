@@ -155,7 +155,7 @@ public class Jokes {
 	}
 
 	private int calculateRating(String jokeId) {
-		List<Rate> rates = mongoOperations.find(Query.query(Criteria.where("_id").is(jokeId)), Rate.class);
+		List<Rate> rates = mongoOperations.find(Query.query(Criteria.where("jokeId").is(jokeId)), Rate.class);
 		if (rates.isEmpty()) {
 			return 0;
 		}
