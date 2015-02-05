@@ -6,8 +6,10 @@ import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -32,11 +34,11 @@ public class Scores {
 	public Response score(@Context HttpServletRequest request) {
 		String user = resolveUserId(request);
 		Rate rate = mongoOperations.findOne(Query.query(Criteria.where("jokeId").is(jokeId).and("user").is(user)), Rate.class);
-		if (rate != null) {
-			return Response.ok().entity(new Score(rate.getScore())).build();
-		} else {
-			return Response.ok().entity(new Score()).build();
-		}
+
+		Score score = rate != null ? new Score(rate.getScore()) : new Score();
+
+		return Response.ok().entity(score)
+				.links(Link.fromUri(UriBuilder.fromResource(Jokes.class).path(jokeId).path("score").build()).rel("joke").build()).build();
 	}
 
 	@PUT

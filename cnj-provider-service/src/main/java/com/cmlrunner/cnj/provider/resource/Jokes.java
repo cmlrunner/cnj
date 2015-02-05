@@ -2,6 +2,7 @@ package com.cmlrunner.cnj.provider.resource;
 
 import static org.springframework.util.StringUtils.hasText;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +16,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -39,6 +44,10 @@ public class Jokes {
 	@Autowired
 	private MongoOperations mongoOperations;
 
+
+	@Context
+	private UriInfo uriInfo;
+	
 	// @GET
 	public Response jokes() {
 		List<Joke> jokes = mongoOperations.findAll(Joke.class);
@@ -54,9 +63,14 @@ public class Jokes {
 			
 			CacheControl cacheControl = new CacheControl();
 			cacheControl.setMustRevalidate(true);
-			cacheControl.setMaxAge(60);
+			cacheControl.setMaxAge(5);
+
+			UriBuilder builder = uriInfo.getAbsolutePathBuilder().clone();
 			
-			return Response.ok().entity(joke).cacheControl(cacheControl).build();
+			Link selfLink = Link.fromUri(builder.build()).rel("self").build();
+			Link scoreLink = Link.fromUri(builder.path("score").build()).rel("joke").build("score");
+
+			return Response.ok().entity(joke).cacheControl(cacheControl).links(selfLink, scoreLink).build();
 		}
 		return Response.status(Status.NO_CONTENT).build();
 	}
@@ -139,7 +153,7 @@ public class Jokes {
 		}
 		throw new WebApplicationException(Status.NOT_FOUND);
 	}
-
+	
 	@GET
 	@Path("/echo")
 	public Response echo() {
