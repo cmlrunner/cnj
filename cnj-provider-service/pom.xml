@@ -11,6 +11,11 @@
 	<artifactId>cnj-provider-service</artifactId>
 	<packaging>war</packaging>
 
+	<properties>
+		<fongo.version>1.6.0</fongo.version>
+		<nosqlunit-version>0.7.6</nosqlunit-version>
+	</properties>
+
 	<dependencies>
 
 		<dependency>
@@ -23,6 +28,20 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-jersey</artifactId>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>com.github.fakemongo</groupId>
+			<artifactId>fongo</artifactId>
+			<version>${fongo.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.lordofthejars</groupId>
+			<artifactId>nosqlunit-mongodb</artifactId>
+			<version>${nosqlunit-version}</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 </project>

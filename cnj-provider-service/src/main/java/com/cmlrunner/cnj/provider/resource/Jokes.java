@@ -2,7 +2,6 @@ package com.cmlrunner.cnj.provider.resource;
 
 import static org.springframework.util.StringUtils.hasText;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,13 +24,12 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import com.cmlrunner.cnj.model.Joke;
 import com.cmlrunner.cnj.model.Rate;
+import com.cmlrunner.cnj.provider.repository.JokeRepository;
+import com.cmlrunner.cnj.provider.repository.RateRepository;
 
 @Service
 @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
@@ -42,31 +40,33 @@ public class Jokes {
 	private static final String NORRIS = "Norris";
 
 	@Autowired
-	private MongoOperations mongoOperations;
+	private JokeRepository jokesRepository;
 
+	@Autowired
+	private RateRepository ratesRepository;
 
 	@Context
 	private UriInfo uriInfo;
-	
+
 	// @GET
 	public Response jokes() {
-		List<Joke> jokes = mongoOperations.findAll(Joke.class);
+		List<Joke> jokes = jokesRepository.findAll();
 		return jokes.isEmpty() ? Response.status(Status.NO_CONTENT).build() : Response.ok().entity(jokes).build();
 	}
-	
+
 	@GET
-	@Path("/{id}")
+	@Path("/{id : \\d{1,3}}")
 	public Response jokes(@PathParam("id") String id) {
-		Joke joke = mongoOperations.findOne(Query.query(Criteria.where("_id").is(id)), Joke.class);
+		Joke joke = jokesRepository.findOne(id);
 		if (joke != null) {
 			joke.setRating(calculateRating(id));
-			
+
 			CacheControl cacheControl = new CacheControl();
 			cacheControl.setMustRevalidate(true);
 			cacheControl.setMaxAge(5);
 
 			UriBuilder builder = uriInfo.getAbsolutePathBuilder().clone();
-			
+
 			Link selfLink = Link.fromUri(builder.build()).rel("self").build();
 			Link scoreLink = Link.fromUri(builder.path("score").build()).rel("joke").build("score");
 
@@ -75,18 +75,17 @@ public class Jokes {
 		return Response.status(Status.NO_CONTENT).build();
 	}
 
-	@SuppressWarnings("unchecked")
 	@GET
 	@Path("/categories")
 	public Response categories() {
-		List<String> categories = mongoOperations.getCollection("jokes").distinct("categories");
+		List<String> categories = jokesRepository.findDistinctCategories();
 		return categories.isEmpty() ? Response.status(Status.NO_CONTENT).build() : Response.ok().entity(categories).build();
 	}
 
 	@GET
 	@Path("/count")
 	public Response count() {
-		long count = mongoOperations.count(null, Jokes.class);
+		long count = jokesRepository.count();
 		return Response.ok().entity(count).build();
 	}
 
@@ -101,30 +100,26 @@ public class Jokes {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 
-		Criteria criteria = Criteria.where("_id").ne(null);
+		Iterable<Joke> jokes = new ArrayList<Joke>();
 
 		if (!limitTo.isEmpty()) {
-			criteria.and("categories").in(limitTo);
+			jokes = jokesRepository.findByCategoriesIn(limitTo);
 		}
 		if (!exclude.isEmpty()) {
-			criteria.and("categories").nin(exclude);
+			jokes = jokesRepository.findByCategoriesNotIn(exclude);
 		}
 
-		if (!criteria.getCriteriaObject().containsField("categories")) {
-			long jokesCount = mongoOperations.count(null, Jokes.class);
+		if (limitTo.isEmpty() && exclude.isEmpty()) {
+			long jokesCount = jokesRepository.count();
 			Random random = new Random();
 			List<String> ids = new ArrayList<String>();
 			for (int i = 0; i < count; i++) {
 				ids.add(String.valueOf(random.nextInt((int) jokesCount)));
 			}
-			criteria = Criteria.where("_id").in(ids);
+			jokes = jokesRepository.findAll(ids);
 		}
 
-		Query query = Query.query(criteria);
-		query.limit(count);
-
-		List<Joke> jokes = mongoOperations.find(query, Joke.class);
-		if (jokes.isEmpty()) {
+		if (!jokes.iterator().hasNext()) {
 			return Response.status(Status.NO_CONTENT).build();
 		}
 
@@ -148,19 +143,19 @@ public class Jokes {
 
 	@Path("/{id}/score")
 	public Scores rate(@PathParam("id") String id) {
-		if (mongoOperations.exists(Query.query(Criteria.where("_id").is(id)), Joke.class)) {
-			return new Scores(mongoOperations, id);
+		if (jokesRepository.exists(id)) {
+			return new Scores(ratesRepository, id);
 		}
 		throw new WebApplicationException(Status.NOT_FOUND);
 	}
-	
+
 	@GET
 	@Path("/echo")
 	public Response echo() {
 		return Response.ok().entity("echo").build();
 	}
 
-	private List<Joke> replaceName(List<Joke> jokes, Map<String, String> replacments) {
+	private List<Joke> replaceName(Iterable<Joke> jokes, Map<String, String> replacments) {
 		List<Joke> changedJokes = new ArrayList<Joke>();
 		for (Joke joke : jokes) {
 			String newName = joke.getJoke();
@@ -175,7 +170,7 @@ public class Jokes {
 	}
 
 	private int calculateRating(String jokeId) {
-		List<Rate> rates = mongoOperations.find(Query.query(Criteria.where("jokeId").is(jokeId)), Rate.class);
+		List<Rate> rates = ratesRepository.findByJokeId(jokeId);
 		if (rates.isEmpty()) {
 			return 0;
 		}

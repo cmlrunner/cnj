@@ -1,0 +1,18 @@
+{
+	"jokes" : [
+		{
+			"_id" : "1",
+			"joke" : "joke text1",
+			"categories" : [
+				"explicit"
+			]
+		},
+		{
+			"_id" : "2",
+			"joke" : "joke text2",
+			"categories" : [
+				"nerdy"
+			]
+		}
+	]
+}

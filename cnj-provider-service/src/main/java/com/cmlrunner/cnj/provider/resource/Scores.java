@@ -9,32 +9,27 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Link;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.Response.Status;
-
-import org.springframework.data.mongodb.core.MongoOperations;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
+import javax.ws.rs.core.UriBuilder;
 
 import com.cmlrunner.cnj.model.Rate;
+import com.cmlrunner.cnj.provider.repository.RateRepository;
 
 @Produces(MediaType.APPLICATION_JSON)
 public class Scores {
 
-	private final MongoOperations mongoOperations;
 	private final String jokeId;
+	private final RateRepository ratesRepository;
 
-	public Scores(MongoOperations mongoOperations, String jokeId) {
+	public Scores(RateRepository ratesRepository, String jokeId) {
 		this.jokeId = jokeId;
-		this.mongoOperations = mongoOperations;
+		this.ratesRepository = ratesRepository;
 	}
 
 	@GET
 	public Response score(@Context HttpServletRequest request) {
 		String user = resolveUserId(request);
-		Rate rate = mongoOperations.findOne(Query.query(Criteria.where("jokeId").is(jokeId).and("user").is(user)), Rate.class);
-
+		Rate rate = ratesRepository.findByJokeIdAndUser(jokeId, user);
 		Score score = rate != null ? new Score(rate.getScore()) : new Score();
 
 		return Response.ok().entity(score)
@@ -49,7 +44,10 @@ public class Scores {
 			return Response.status(Status.BAD_REQUEST).build();
 		}
 		String user = resolveUserId(request);
-		mongoOperations.upsert(Query.query(Criteria.where("jokeId").is(jokeId).and("user").is(user)), Update.update("score", value), Rate.class);
+
+		Rate rate = new Rate(jokeId, user, value);
+
+		ratesRepository.upsert(rate);
 
 		return Response.ok(score).build();
 	}
